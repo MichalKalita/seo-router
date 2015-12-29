@@ -8,9 +8,8 @@
         }
     ],
     "require": {
-        "nette/application": "~2.3",
-        "nette/http": "~2.3",
-        "nette/utils": "~2.3"
+        "nette/application": "~2.2",
+        "nette/http": "~2.2"
     },
     "require-dev": {
         "nette/tester": "~1.0",

@@ -40,8 +40,11 @@ class RouterMatch extends \Tester\TestCase
 		$result = $router->match($httpRequest);
 		Assert::type('Nette\Application\Request', $result);
 		Assert::same('Presenter', $result->getPresenterName());
-		Assert::same('default', $result->getParameter('action'));
-		Assert::same(123, $result->getParameter('id'));
+
+		// do NOT use getParameter(), it is NOT compatible to nette 2.2
+		$params = $result->getParameters();
+		Assert::same('default', $params['action']);
+		Assert::same(123, $params['id']);
 	}
 
 	/**
