@@ -12,9 +12,13 @@ class Router extends Object implements Nette\Application\IRouter
 	/** @var ISource[] */
 	protected $sources = array();
 
-	function __construct(ISource $source)
+	/** @var int */
+	protected $flags;
+
+	function __construct(ISource $source, $flags = 0)
 	{
 		$this->addSource($source);
+		$this->flags = $flags;
 	}
 
 	public function addSource(ISource $source)
@@ -101,6 +105,10 @@ class Router extends Object implements Nette\Application\IRouter
 	 */
 	public function constructUrl(Nette\Application\Request $appRequest, Nette\Http\Url $refUrl)
 	{
+		if ($this->flags & self::ONE_WAY) {
+			return NULL;
+		}
+
 		$params = $appRequest->getParameters();
 
 		// TODO: pridat nastaveni jazyku
@@ -110,8 +118,8 @@ class Router extends Object implements Nette\Application\IRouter
 			// TODO: pridat nastaveni pro ignorovane parametry
 			unset($params['id'], $params['action'], $params['locale']);
 
-			// TODO: support https
-			$url = 'http://' . $refUrl->getAuthority() . $refUrl->getPath() /* . $lang */ . $slug;
+			$url = (($this->flags & self::SECURED) ? 'https' : 'http') . '://' .
+				$refUrl->getAuthority() . $refUrl->getPath() /* . $lang */ . $slug;
 
 			$sep = ini_get('arg_separator.input');
 			$query = http_build_query($params, '', $sep ? $sep[0] : '&');
@@ -120,7 +128,7 @@ class Router extends Object implements Nette\Application\IRouter
 			}
 			return $url;
 		}
-		return null;
+		return NULL;
 	}
 
 }

@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Test: Myiyk\SeoRouter\Router with Secure
+ */
+
+include __DIR__ . '/../bootstrap.php';
+
+use Mockery as M;
+use Myiyk\SeoRouter\Router;
+use Tester\Assert;
+
+class RouterSecured extends \Tester\TestCase
+{
+	function getSource($request, $return)
+	{
+		$mock = M::mock('Myiyk\SeoRouter\ISource');
+		$mock->shouldReceive('toUrl')
+			->with($request)->once()->andReturn($return);
+		return $mock;
+	}
+
+	function testOneSourceNoResult()
+	{
+		$request = new \Nette\Application\Request('Front:Homepage', NULL,
+			array(
+				'action' => 'show',
+				'id' => 123
+			));
+
+		$router = new Router($this->getSource($request, 'url'), Router::SECURED);
+
+		$httpUrl = new Nette\Http\Url("http://example.com");
+		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));
+	}
+
+	function tearDown()
+	{
+		M::close();
+	}
+}
+
+(new RouterSecured())->run();
