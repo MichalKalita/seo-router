@@ -11,8 +11,6 @@ class Router extends Object implements Nette\Application\IRouter
 {
 	/** @var ISource[] */
 	protected $sources = array();
-	/** @var string */
-	protected $defaultPresenter = 'Homepage';
 
 	function __construct(ISource $source)
 	{
