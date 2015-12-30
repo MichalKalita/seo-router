@@ -1,8 +1,8 @@
-.PHONY: tests prepare # do NOT skip tests if folder exists
+.PHONY: tests install # do NOT skip tests if folder exists
 
-all: prepare tests
+all: install tests
 
-prepare:
+install:
 	composer self-update
 	composer update --no-interaction
 
