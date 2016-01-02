@@ -3,21 +3,36 @@
 namespace Myiyk\SeoRouter;
 
 use Nette;
+use Nette\Application\Request;
+use Nette\Http\Url;
 use Nette\Object;
 
-// TODO: nastaveni, ktere parametry nedavat do path
 // TODO: promenne v URL, napr. 'domain', aby slo adresovat subdomeny
 class Router extends Object implements Nette\Application\IRouter
 {
+	/** options */
+	const ACTION_IN_PRESENTER = 'actionInPresenter',
+		IGNORE_IN_QUERY = 'ignoreInQuery',
+		IGNORE_URL = 'ignoreUrl',
+		PRESENTER = 'presenter';
+
 	/** @var ISource[] */
 	protected $sources = array();
 
 	/** @var int */
 	protected $flags;
 
-	function __construct(ISource $source, $flags = 0)
+	protected $options = array(
+		self::ACTION_IN_PRESENTER => FALSE, // presenter name contains action
+		self::IGNORE_IN_QUERY => array('presenter', 'action', 'id'), // parameters ignored from query
+		self::IGNORE_URL => array(), // array of ignored url
+		self::PRESENTER => NULL, // default presenter
+	);
+
+	function __construct(ISource $source, $options = array(), $flags = 0)
 	{
 		$this->addSource($source);
+		$this->loadOptions($options);
 		$this->flags = $flags;
 	}
 
@@ -29,7 +44,7 @@ class Router extends Object implements Nette\Application\IRouter
 
 	/**
 	 * @param string $url
-	 * @return false|null|Nette\Application\Request
+	 * @return false|null|Request
 	 */
 	protected function toAction($url)
 	{
@@ -41,10 +56,10 @@ class Router extends Object implements Nette\Application\IRouter
 	}
 
 	/**
-	 * @param Nette\Application\Request $appRequest
-	 * @return false|null|Nette\Application\Request
+	 * @param Request $appRequest
+	 * @return false|null|Request
 	 */
-	protected function toUrl(Nette\Application\Request $appRequest)
+	protected function toUrl(Request $appRequest)
 	{
 		foreach ($this->sources as $source) {
 			if ($result = $source->toUrl($appRequest))
@@ -53,45 +68,76 @@ class Router extends Object implements Nette\Application\IRouter
 		return false;
 	}
 
+	protected function clearParameters($params)
+	{
+		foreach ($params as $p => $_value) {
+			if (in_array($p, $this->options[self::IGNORE_IN_QUERY])) {
+				unset($params[$p]);
+			}
+		}
+		return $params;
+	}
+
 	/**
 	 * @param Nette\Http\IRequest $httpRequest
-	 * @return Nette\Application\Request|null
+	 * @return Request|null
 	 */
 	public function match(Nette\Http\IRequest $httpRequest)
 	{
 		$url = $httpRequest->getUrl();
 		$path = substr($url->path, strlen($url->scriptPath));
 
-//		if (!$path) { // TODO: tohle musi delat samotny zdroj
-//			return NULL;
-//		}
-
-		// TODO: podpora jazyku pres nastaveni
-		if (preg_match("~^(?'lang'\\w{2})/(?'path'.*)$~U", $path, $matches)) {
-			$lang = $matches['lang'];
-			$path = $matches['path'];
-		} else {
-			$lang = 'en';
+		if (in_array($path, $this->options[self::IGNORE_URL])) {
+			return NULL;
 		}
 
-		if ($request = $this->toAction((string)$path)) {
-			$query = $httpRequest->getQuery();
+		// TODO: podpora jazyku pres nastaveni
+//		if (preg_match("~^(?'lang'\\w{2})/(?'path'.*)$~U", $path, $matches)) {
+//			$lang = $matches['lang'];
+//			$path = $matches['path'];
+//		} else {
+//			$lang = 'en';
+//		}
 
-			$params = $request->getParameters();
-//			$splitter = strrpos($request->getPresenterName(), ':');
-//			if ($splitter !== FALSE) {
-//				$params['action'] = substr($request->getPresenterName(), $splitter + 1);
-//				$presenter = substr($request->getPresenterName(), 0, $splitter);
-//			} else {
-//				$params['action'] = $request->getPresenterName();
-//				$presenter = $this->defaultPresenter;
-//			}
-			if (!isset($params['locale']) || !$params['locale']) {
-				$params['locale'] = $lang;
+		if ($request = $this->toAction((string)$path)) {
+			if (!$request instanceof Request) {
+				throw new \Exception(
+					'Myiyk\SeoRouter\ISource::toAction must return Nette\Application\Request, not '
+					. (is_object($request) ? get_class($request) : gettype($request))
+				);
 			}
 
-			return new \Nette\Application\Request($request->getPresenterName(),
-				$httpRequest->getMethod(), array_merge($params, $query),
+			$params = array_merge($httpRequest->getQuery(), $request->getParameters());
+			$presenter = $request->getPresenterName();
+
+			// presenter not set from ISource, load from parameters or default presenter
+			if (!mb_strlen($presenter)) {
+				if (isset($params[self::PRESENTER]) && $params[self::PRESENTER]) {
+					$presenter = $params[self::PRESENTER];
+				} elseif ($this->options[self::PRESENTER]) {
+					$presenter = $this->options[self::PRESENTER];
+				} else {
+					return NULL;
+				}
+			}
+			unset($params[self::PRESENTER]);
+
+			// find action name in presenter, if it in enable in options
+			if (!isset($params['action']) && $this->options['actionInPresenter']) {
+				$splitter = strrpos($presenter, ':');
+				if ($splitter !== FALSE) {
+					$params['action'] = substr($presenter, $splitter + 1);
+					$presenter = substr($presenter, 0, $splitter);
+				}
+			}
+
+			// TODO: nastaveni jazyka
+//			if (!isset($params['locale']) || !$params['locale']) {
+//				$params['locale'] = $lang;
+//			}
+
+			return new Request($presenter,
+				$httpRequest->getMethod(), $params,
 				$httpRequest->getPost(), $httpRequest->getFiles()
 			);
 		}
@@ -99,27 +145,25 @@ class Router extends Object implements Nette\Application\IRouter
 	}
 
 	/**
-	 * @param Nette\Application\Request $appRequest
-	 * @param Nette\Http\Url $refUrl
+	 * @param Request $appRequest
+	 * @param Url $refUrl
 	 * @return null|string
 	 */
-	public function constructUrl(Nette\Application\Request $appRequest, Nette\Http\Url $refUrl)
+	public function constructUrl(Request $appRequest, Url $refUrl)
 	{
 		if ($this->flags & self::ONE_WAY) {
 			return NULL;
 		}
 
-		$params = $appRequest->getParameters();
-
-		// TODO: pridat nastaveni jazyku
-		// $lang = (isset($params['locale']) && $params['locale'] != 'en') ? ($params['locale'] . '/') : NULL;
-
 		if ($slug = $this->toUrl($appRequest)) {
-			// TODO: pridat nastaveni pro ignorovane parametry
-			unset($params['id'], $params['action'], $params['locale']);
+
+			// TODO: pridat nastaveni jazyku
+			// $lang = (isset($params['locale']) && $params['locale'] != 'en') ? ($params['locale'] . '/') : NULL;
+
+			$params = $this->clearParameters($appRequest->getParameters());
 
 			$url = (($this->flags & self::SECURED) ? 'https' : 'http') . '://' .
-				$refUrl->getAuthority() . $refUrl->getPath() /* . $lang */ . $slug;
+				$refUrl->getAuthority() . '/' . $slug;
 
 			$sep = ini_get('arg_separator.input');
 			$query = http_build_query($params, '', $sep ? $sep[0] : '&');
@@ -129,6 +173,45 @@ class Router extends Object implements Nette\Application\IRouter
 			return $url;
 		}
 		return NULL;
+	}
+
+	public function loadOptions(array $new)
+	{
+		$result = $this->options;
+
+		if (array_key_exists(self::ACTION_IN_PRESENTER, $new)) {
+			$result[self::ACTION_IN_PRESENTER] = $new[self::ACTION_IN_PRESENTER];
+			unset($new[self::ACTION_IN_PRESENTER]);
+		}
+
+		if (array_key_exists(self::IGNORE_IN_QUERY, $new)) {
+			if (is_array($new[self::IGNORE_IN_QUERY])) {
+				$result[self::IGNORE_IN_QUERY] = $new[self::IGNORE_IN_QUERY];
+			} else {
+				$result[self::IGNORE_IN_QUERY] = array();
+			}
+			unset($new[self::IGNORE_IN_QUERY]);
+		}
+
+		if (array_key_exists(self::IGNORE_URL, $new)) {
+			if (is_array($new[self::IGNORE_URL])) {
+				$result[self::IGNORE_URL] = $new[self::IGNORE_URL];
+			} else {
+				$result[self::IGNORE_URL] = array();
+			}
+			unset($new[self::IGNORE_URL]);
+		}
+
+		if (array_key_exists(self::PRESENTER, $new)) {
+			$result[self::PRESENTER] = $new[self::PRESENTER];
+			unset($new[self::PRESENTER]);
+		}
+
+		if (count($new)) {
+			throw new InvalidOptionsException('Options not recognized. ' . print_r($new, true));
+		}
+
+		$this->options = $result;
 	}
 
 }

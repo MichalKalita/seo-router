@@ -28,7 +28,7 @@ class RouterSecured extends \Tester\TestCase
 				'id' => 123
 			));
 
-		$router = new Router($this->getSource($request, 'url'), Router::SECURED);
+		$router = new Router($this->getSource($request, 'url'), array(), Router::SECURED);
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));

@@ -28,7 +28,7 @@ class RouterOneWay extends \Tester\TestCase
 				'id' => 123
 			));
 
-		$router = new Router($this->getSource($request), Router::ONE_WAY);
+		$router = new Router($this->getSource($request), array(), Router::ONE_WAY);
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same(NULL, $router->constructUrl($request, $httpUrl));
