@@ -63,6 +63,22 @@ class RouterMatch extends \Tester\TestCase
 		Assert::null($router->match($httpRequest));
 	}
 
+	/**
+	 * @throws \Myiyk\SeoRouter\BadOutputException
+	 */
+	function testBadSource()
+	{
+		$mock = M::mock('Myiyk\SeoRouter\ISource');
+		$mock->shouldReceive('toAction')->with('url')->once()->andReturn(array('justArray'));
+
+		$router = new \Myiyk\SeoRouter\Router($mock);
+
+		$url = new Nette\Http\UrlScript("http://example.com/url");
+		$httpRequest = new Nette\Http\Request($url);
+
+		$router->match($httpRequest); // throws exception
+	}
+
 	function tearDown()
 	{
 		M::close();

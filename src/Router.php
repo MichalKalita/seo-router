@@ -44,15 +44,26 @@ class Router extends Object implements Nette\Application\IRouter
 
 	/**
 	 * @param string $url
-	 * @return false|null|Request
+	 * @return false|Request|null
+	 * @throws BadOutputException
 	 */
 	protected function toAction($url)
 	{
+		$result = NULL;
+
 		foreach ($this->sources as $source) {
-			if ($result = $source->toAction($url))
-				return $result;
+			if ($result = $source->toAction($url)) {
+				if (!$result instanceof Request) {
+					throw new BadOutputException(
+						get_class($source) . '::toAction() must return Nette\Application\Request, not '
+						. (is_object($result) ? get_class($result) : gettype($result))
+					);
+				}
+				break;
+			}
 		}
-		return false;
+
+		return ($result == NULL) ? false : $result;
 	}
 
 	/**
@@ -100,13 +111,6 @@ class Router extends Object implements Nette\Application\IRouter
 //		}
 
 		if ($request = $this->toAction((string)$path)) {
-			if (!$request instanceof Request) {
-				throw new \Exception(
-					'Myiyk\SeoRouter\ISource::toAction must return Nette\Application\Request, not '
-					. (is_object($request) ? get_class($request) : gettype($request))
-				);
-			}
-
 			$params = array_merge($httpRequest->getQuery(), $request->getParameters());
 			$presenter = $request->getPresenterName();
 
