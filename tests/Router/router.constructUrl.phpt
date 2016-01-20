@@ -1,10 +1,10 @@
 <?php
 include __DIR__ . '/../bootstrap.php';
+include __DIR__ . '/router.php';
 
 use Mockery as M;
-use Tester\Assert;
 
-class RouterConstructUrl extends \Tester\TestCase
+class RouterConstructUrl extends RouterBaseTest
 {
 	/** @var \Nette\Http\Url */
 	protected $httpUrl;
@@ -14,71 +14,78 @@ class RouterConstructUrl extends \Tester\TestCase
 		$this->httpUrl = new Nette\Http\Url("http://example.com");
 	}
 
-	function getSource(\Nette\Application\Request $request, $return)
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toUrl')
-			->with($request)->once()->andReturn($return)
-			->globally()->ordered();
-		return $mock;
-	}
-
-	/**
-	 * Do NOT inline this method, because it does not working
-	 * @return \Myiyk\SeoRouter\ISource
-	 */
-	function getNeverCalledSource()
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toUrl')->never();
-		return $mock;
-	}
-
 	function testNotFound()
 	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
+		$router = new \Myiyk\SeoRouter\Router(self::getSource('',
+			array('Front:Homepage',
+				array(
+					'action' => 'show',
+					'id' => 123,
+				)
+			)
+		));
 
-		$router = new \Myiyk\SeoRouter\Router($this->getSource($request, false));
-
-		Assert::null($router->constructUrl($request, $this->httpUrl));
+		$this->routeIn($router, 'url', 'Front:Homepage', array(
+			'action' => 'show',
+			'test' => 'testvalue',
+			'id' => 123,
+		));
 	}
 
 	function testOneSource()
 	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
+		$router = new \Myiyk\SeoRouter\Router(self::getSource('url', array(
+				'Front:Homepage', array(
+					'action' => 'show',
+					'id' => 123,
+				)
+			)
+		));
 
-		$router = new \Myiyk\SeoRouter\Router($this->getSource($request, 'url'));
-
-		Assert::same('http://example.com/url', $router->constructUrl($request, $this->httpUrl));
+		$this->routeIn($router, '/url', 'Front:Homepage', array(
+			'action' => 'show',
+			'test' => 'testvalue',
+			'id' => 123,
+		), '/url?test=testvalue');
 	}
 
 	function testMultipleSources()
 	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
-
-		// first source doest have url
-		$router = new \Myiyk\SeoRouter\Router($this->getSource($request, false));
-		$router->addSource($this->getSource($request, null));
+		// first source is empty
+		$router = new \Myiyk\SeoRouter\Router(self::getSource('url', NULL));
 
 		// second source have url
-		$router->addSource($this->getSource($request, 'url'));
+		$router->addSource(self::getSource('url', array(
+			'Front:Homepage', array(
+				'action' => 'show',
+				'id' => 123,
+			)
+		)));
 
 		// third source will never used
-		$router->addSource($this->getNeverCalledSource());
+		$router->addSource(self::getEmptyNeverCalledSource());
 
-		Assert::same('http://example.com/url', $router->constructUrl($request, $this->httpUrl));
+		$this->routeIn($router, '/url', 'Front:Homepage', array(
+			'action' => 'show',
+			'test' => 'testvalue',
+			'id' => 123,
+		), '/url?test=testvalue');
+	}
+
+	function testGenerateUrlWithBasePath()
+	{
+		$router = new \Myiyk\SeoRouter\Router(self::getSource('url', array(
+			'Front:Homepage', array(
+				'action' => 'show',
+				'id' => 123,
+			)
+		)));
+
+		$this->routeIn($router, '/~user/web-root/url', 'Front:Homepage', array(
+			'action' => 'show',
+			'test' => 'testvalue',
+			'id' => 123,
+		), '/~user/web-root/url?test=testvalue', '/~user/web-root/index.php');
 	}
 
 	function tearDown()

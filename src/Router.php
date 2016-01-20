@@ -96,7 +96,7 @@ class Router extends Object implements Nette\Application\IRouter
 	public function match(Nette\Http\IRequest $httpRequest)
 	{
 		$url = $httpRequest->getUrl();
-		$path = substr($url->path, strlen($url->scriptPath));
+		$path = substr($url->path, strlen($url->basePath));
 
 		if (in_array($path, $this->options[self::IGNORE_URL])) {
 			return NULL;
@@ -167,7 +167,7 @@ class Router extends Object implements Nette\Application\IRouter
 			$params = $this->clearParameters($appRequest->getParameters());
 
 			$url = (($this->flags & self::SECURED) ? 'https' : 'http') . '://' .
-				$refUrl->getAuthority() . '/' . $slug;
+				$refUrl->getAuthority() . $refUrl->getBasePath() . $slug;
 
 			$sep = ini_get('arg_separator.input');
 			$query = http_build_query($params, '', $sep ? $sep[0] : '&');

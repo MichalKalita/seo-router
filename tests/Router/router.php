@@ -10,13 +10,24 @@ use Tester\Assert;
 
 class RouterBaseTest extends \Tester\TestCase
 {
-	static function getSource($url, array $request, $toUrlCount = NULL, $toActionCount = NULL)
+	/**
+	 * @param string $url
+	 * @param null|array $request
+	 * @param null|int $toUrlCount
+	 * @param null|int $toActionCount
+	 * @return \Myiyk\SeoRouter\ISource
+	 */
+	static function getSource($url, $request = NULL, $toUrlCount = NULL, $toActionCount = NULL)
 	{
-		$r = new Request(
-			$request[0], // presenter name
-			NULL,
-			isset($request[1]) ? $request[1] : array() // parameters
-		);
+		if ($request === NULL) {
+			$r = NULL;
+		} else {
+			$r = new Request(
+				$request[0], // presenter name
+				NULL,
+				isset($request[1]) ? $request[1] : array() // parameters
+			);
+		}
 
 		$mock = M::mock('Myiyk\SeoRouter\ISource');
 		$mock->shouldReceive('toUrl')
@@ -27,10 +38,19 @@ class RouterBaseTest extends \Tester\TestCase
 		return $mock;
 	}
 
+	static function getEmptyNeverCalledSource()
+	{
+		return self::getSource(NULL, NULL, 0, 0);
+	}
+
 	static function routeIn(Nette\Application\IRouter $route, $url,
-	                        $expectedPresenter = NULL, $expectedParams = NULL, $expectedUrl = NULL)
+	                        $expectedPresenter = NULL, $expectedParams = NULL, $expectedUrl = NULL,
+	                        $scriptPath = NULL)
 	{
 		$url = new Nette\Http\UrlScript("http://example.com$url");
+		if ($scriptPath) {
+			$url->setScriptPath($scriptPath);
+		}
 		if ($url->getQueryParameter('presenter') === NULL) {
 			$url->setQueryParameter('presenter', 'querypresenter');
 		}
