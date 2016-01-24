@@ -44,7 +44,7 @@ class Router extends Object implements Nette\Application\IRouter
 
 	/**
 	 * @param string $url
-	 * @return false|Request|null
+	 * @return Request|null
 	 * @throws BadOutputException
 	 */
 	protected function toAction($url)
@@ -63,12 +63,12 @@ class Router extends Object implements Nette\Application\IRouter
 			}
 		}
 
-		return ($result == NULL) ? false : $result;
+		return $result;
 	}
 
 	/**
 	 * @param Request $appRequest
-	 * @return false|null|Request
+	 * @return null|Request
 	 */
 	protected function toUrl(Request $appRequest)
 	{
@@ -76,7 +76,7 @@ class Router extends Object implements Nette\Application\IRouter
 			if ($result = $source->toUrl($appRequest))
 				return $result;
 		}
-		return false;
+		return NULL;
 	}
 
 	protected function clearParameters($params)
