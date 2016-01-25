@@ -212,7 +212,10 @@ class Router extends Object implements Nette\Application\IRouter
 		}
 
 		if (count($new)) {
-			throw new InvalidOptionsException('Options not recognized. ' . print_r($new, true));
+			throw new InvalidConfigurationException(
+				'Options not recognized. ' . print_r($new, true),
+				InvalidConfigurationException::NOT_RECOGNIZED
+			);
 		}
 
 		$this->options = $result;

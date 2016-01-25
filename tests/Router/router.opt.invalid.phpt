@@ -13,7 +13,7 @@ use Myiyk\SeoRouter\Router;
 class RouterOptionInvalid extends RouterBaseTest
 {
 	/**
-	 * @throws \Myiyk\SeoRouter\InvalidOptionsException
+	 * @throws \Myiyk\SeoRouter\InvalidConfigurationException
 	 */
 	function testInvalidOptions()
 	{
