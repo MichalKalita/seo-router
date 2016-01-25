@@ -1,6 +1,7 @@
 {
     "name": "myiyk/seo-router",
     "type": "library",
+    "license": "MIT",
     "authors": [
         {
             "name": "Michal Kalita",
