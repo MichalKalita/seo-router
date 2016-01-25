@@ -108,14 +108,6 @@ class Router extends Object implements Nette\Application\IRouter
 			return NULL;
 		}
 
-		// TODO: podpora jazyku pres nastaveni
-//		if (preg_match("~^(?'lang'\\w{2})/(?'path'.*)$~U", $path, $matches)) {
-//			$lang = $matches['lang'];
-//			$path = $matches['path'];
-//		} else {
-//			$lang = 'en';
-//		}
-
 		if ($request = $this->toAction((string)$path)) {
 			$params = array_merge($httpRequest->getQuery(), $request->getParameters());
 			$presenter = $request->getPresenterName();
@@ -141,11 +133,6 @@ class Router extends Object implements Nette\Application\IRouter
 				}
 			}
 
-			// TODO: nastaveni jazyka
-//			if (!isset($params['locale']) || !$params['locale']) {
-//				$params['locale'] = $lang;
-//			}
-
 			return new Request($presenter,
 				$httpRequest->getMethod(), $params,
 				$httpRequest->getPost(), $httpRequest->getFiles()
@@ -166,10 +153,6 @@ class Router extends Object implements Nette\Application\IRouter
 		}
 
 		if ($slug = $this->toUrl($appRequest)) {
-
-			// TODO: pridat nastaveni jazyku
-			// $lang = (isset($params['locale']) && $params['locale'] != 'en') ? ($params['locale'] . '/') : NULL;
-
 			$params = $this->clearParameters($appRequest->getParameters());
 
 			$url = (($this->options['secured']) ? 'https' : 'http') . '://' .
