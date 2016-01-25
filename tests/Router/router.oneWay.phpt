@@ -20,7 +20,7 @@ class RouterOneWay extends \Tester\TestCase
 		return $mock;
 	}
 
-	function testOneSourceNoResult()
+	function testConfiguredInFlags()
 	{
 		$request = new \Nette\Application\Request('Front:Homepage', NULL,
 			array(
@@ -29,6 +29,20 @@ class RouterOneWay extends \Tester\TestCase
 			));
 
 		$router = new Router($this->getSource($request), array(), Router::ONE_WAY);
+
+		$httpUrl = new Nette\Http\Url("http://example.com");
+		Assert::same(NULL, $router->constructUrl($request, $httpUrl));
+	}
+
+	function testConfiguredInOptions()
+	{
+		$request = new \Nette\Application\Request('Front:Homepage', NULL,
+			array(
+				'action' => 'show',
+				'id' => 123
+			));
+
+		$router = new Router($this->getSource($request), array('oneWay' => TRUE));
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same(NULL, $router->constructUrl($request, $httpUrl));

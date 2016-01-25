@@ -20,7 +20,7 @@ class RouterSecured extends \Tester\TestCase
 		return $mock;
 	}
 
-	function testOneSourceNoResult()
+	function testConfiguredInFlags()
 	{
 		$request = new \Nette\Application\Request('Front:Homepage', NULL,
 			array(
@@ -29,6 +29,20 @@ class RouterSecured extends \Tester\TestCase
 			));
 
 		$router = new Router($this->getSource($request, 'url'), array(), Router::SECURED);
+
+		$httpUrl = new Nette\Http\Url("http://example.com");
+		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));
+	}
+
+	function testConfiguredInOptions()
+	{
+		$request = new \Nette\Application\Request('Front:Homepage', NULL,
+			array(
+				'action' => 'show',
+				'id' => 123
+			));
+
+		$router = new Router($this->getSource($request, 'url'), array('secured' => TRUE));
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));

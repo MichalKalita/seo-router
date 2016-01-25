@@ -19,21 +19,27 @@ class Router extends Object implements Nette\Application\IRouter
 	/** @var ISource[] */
 	protected $sources = array();
 
-	/** @var int */
-	protected $flags;
-
 	protected $options = array(
 		self::ACTION_IN_PRESENTER => FALSE, // presenter name contains action
 		self::IGNORE_IN_QUERY => array('presenter', 'action', 'id'), // parameters ignored from query
 		self::IGNORE_URL => array(), // array of ignored url
 		self::PRESENTER => NULL, // default presenter
+		'secured' => FALSE,
+		'oneWay' => FALSE,
 	);
 
-	function __construct(ISource $source, $options = array(), $flags = 0)
+	function __construct(ISource $source, array $options = array(), $flags = 0)
 	{
 		$this->addSource($source);
+
+		if ($flags & self::SECURED) {
+			$options['secured'] = TRUE;
+		}
+		if ($flags & self::ONE_WAY) {
+			$options['oneWay'] = TRUE;
+		}
+
 		$this->loadOptions($options);
-		$this->flags = $flags;
 	}
 
 	public function addSource(ISource $source)
@@ -68,7 +74,7 @@ class Router extends Object implements Nette\Application\IRouter
 
 	/**
 	 * @param Request $appRequest
-	 * @return null|Request
+	 * @return null|string
 	 */
 	protected function toUrl(Request $appRequest)
 	{
@@ -155,7 +161,7 @@ class Router extends Object implements Nette\Application\IRouter
 	 */
 	public function constructUrl(Request $appRequest, Url $refUrl)
 	{
-		if ($this->flags & self::ONE_WAY) {
+		if ($this->options['oneWay']) {
 			return NULL;
 		}
 
@@ -166,7 +172,7 @@ class Router extends Object implements Nette\Application\IRouter
 
 			$params = $this->clearParameters($appRequest->getParameters());
 
-			$url = (($this->flags & self::SECURED) ? 'https' : 'http') . '://' .
+			$url = (($this->options['secured']) ? 'https' : 'http') . '://' .
 				$refUrl->getAuthority() . $refUrl->getBasePath() . $slug;
 
 			$sep = ini_get('arg_separator.input');
@@ -209,6 +215,16 @@ class Router extends Object implements Nette\Application\IRouter
 		if (array_key_exists(self::PRESENTER, $new)) {
 			$result[self::PRESENTER] = $new[self::PRESENTER];
 			unset($new[self::PRESENTER]);
+		}
+
+		if (array_key_exists('secured', $new)) {
+			$result['secured'] = (bool)$new['secured'];
+			unset($new['secured']);
+		}
+
+		if (array_key_exists('oneWay', $new)) {
+			$result['oneWay'] = (bool)$new['oneWay'];
+			unset($new['oneWay']);
 		}
 
 		if (count($new)) {
