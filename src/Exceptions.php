@@ -11,3 +11,7 @@ class InvalidConfigurationException extends \Exception
 class BadOutputException extends \Exception
 {
 }
+
+class InvalidParameterException extends \Exception
+{
+}
