@@ -9,7 +9,7 @@ class RouterMatch extends \Tester\TestCase
 	function getSource()
 	{
 		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with('url')->once()->andReturn(false)->globally()->ordered();
+		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(false)->globally()->ordered();
 		return $mock;
 	}
 
@@ -27,8 +27,8 @@ class RouterMatch extends \Tester\TestCase
 	function testOneSource()
 	{
 		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with('url')->once()->andReturn(
-			new \Nette\Application\Request('Presenter', NULL, array('action' => 'default', 'id' => 123))
+		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(
+			new \Myiyk\SeoRouter\Action('Presenter:default', array('id' => 123))
 		);
 
 		$router = new \Myiyk\SeoRouter\Router($mock);
@@ -69,7 +69,7 @@ class RouterMatch extends \Tester\TestCase
 	function testBadSource()
 	{
 		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with('url')->once()->andReturn(array('justArray'));
+		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(array('justArray'));
 
 		$router = new \Myiyk\SeoRouter\Router($mock);
 

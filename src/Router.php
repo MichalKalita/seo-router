@@ -11,16 +11,19 @@ use Nette\Object;
 class Router extends Object implements Nette\Application\IRouter
 {
 	/** options */
-	const ACTION_IN_PRESENTER = 'actionInPresenter',
-		IGNORE_IN_QUERY = 'ignoreInQuery',
+	const IGNORE_IN_QUERY = 'ignoreInQuery',
 		IGNORE_URL = 'ignoreUrl',
 		PRESENTER = 'presenter';
+
+	/** @internal url type */
+	const HOST = 1,
+		PATH = 2,
+		RELATIVE = 3;
 
 	/** @var ISource[] */
 	protected $sources = array();
 
 	protected $options = array(
-		self::ACTION_IN_PRESENTER => FALSE, // presenter name contains action
 		self::IGNORE_IN_QUERY => array('presenter', 'action', 'id'), // parameters ignored from query
 		self::IGNORE_URL => array(), // array of ignored url
 		self::PRESENTER => NULL, // default presenter
@@ -49,8 +52,8 @@ class Router extends Object implements Nette\Application\IRouter
 	}
 
 	/**
-	 * @param string $url
-	 * @return Request|null
+	 * @param Url $url
+	 * @return Action|null
 	 * @throws BadOutputException
 	 */
 	protected function toAction($url)
@@ -59,9 +62,9 @@ class Router extends Object implements Nette\Application\IRouter
 
 		foreach ($this->sources as $source) {
 			if ($result = $source->toAction($url)) {
-				if (!$result instanceof Request) {
+				if (!$result instanceof Action) {
 					throw new BadOutputException(
-						get_class($source) . '::toAction() must return Nette\Application\Request, not '
+						get_class($source) . '::toAction() must return Myiyk\SeoRouter\Action, not '
 						. (is_object($result) ? get_class($result) : gettype($result))
 					);
 				}
@@ -73,14 +76,22 @@ class Router extends Object implements Nette\Application\IRouter
 	}
 
 	/**
-	 * @param Request $appRequest
-	 * @return null|string
+	 * @param Action $action
+	 * @return null|string|Url
+	 * @throws BadOutputException
 	 */
-	protected function toUrl(Request $appRequest)
+	protected function toUrl(Action $action)
 	{
 		foreach ($this->sources as $source) {
-			if ($result = $source->toUrl($appRequest))
+			if ($result = $source->toUrl($action)) {
+				if (!$result instanceof Url && !is_string($result)) {
+					throw new BadOutputException(
+						get_class($source) . '::toUrl() must return Nette\Http\Url or string, not '
+						. (is_object($result) ? get_class($result) : gettype($result))
+					);
+				}
 				return $result;
+			}
 		}
 		return NULL;
 	}
@@ -108,9 +119,10 @@ class Router extends Object implements Nette\Application\IRouter
 			return NULL;
 		}
 
-		if ($request = $this->toAction((string)$path)) {
-			$params = array_merge($httpRequest->getQuery(), $request->getParameters());
-			$presenter = $request->getPresenterName();
+		if ($action = $this->toAction($url)) {
+			$params = array_merge($httpRequest->getQuery(), $action->getParameters());
+			$presenter = $action->getPresenter();
+			$params['action'] = $action->getAction();
 
 			// presenter not set from ISource, load from parameters or default presenter
 			if (!mb_strlen($presenter)) {
@@ -123,15 +135,6 @@ class Router extends Object implements Nette\Application\IRouter
 				}
 			}
 			unset($params[self::PRESENTER]);
-
-			// find action name in presenter, if it in enable in options
-			if (!isset($params['action']) && $this->options['actionInPresenter']) {
-				$splitter = strrpos($presenter, ':');
-				if ($splitter !== FALSE) {
-					$params['action'] = substr($presenter, $splitter + 1);
-					$presenter = substr($presenter, 0, $splitter);
-				}
-			}
 
 			return new Request($presenter,
 				$httpRequest->getMethod(), $params,
@@ -148,34 +151,68 @@ class Router extends Object implements Nette\Application\IRouter
 	 */
 	public function constructUrl(Request $appRequest, Url $refUrl)
 	{
+		// one way can't generate link
 		if ($this->options['oneWay']) {
 			return NULL;
 		}
 
-		if ($slug = $this->toUrl($appRequest)) {
-			$params = $this->clearParameters($appRequest->getParameters());
+		$params = $this->clearParameters($appRequest->getParameters());
 
-			$url = (($this->options['secured']) ? 'https' : 'http') . '://' .
-				$refUrl->getAuthority() . $refUrl->getBasePath() . $slug;
+		$action = new Action($appRequest->getPresenterName() . ':' . $appRequest->getParameter('action'), $params);
 
-			$sep = ini_get('arg_separator.input');
-			$query = http_build_query($params, '', $sep ? $sep[0] : '&');
-			if ($query != '') { // intentionally ==
-				$url .= '?' . $query;
-			}
-			return $url;
+		// ISource return NULL, not found url to generate
+		if (($seoUrl = $this->toUrl($action)) === NULL) {
+			return NULL;
 		}
-		return NULL;
+
+		if ($seoUrl instanceof Url) {
+			// host
+			$host = $seoUrl->getHost() ? $seoUrl->getHost() : $refUrl->getHost();
+			// path
+			$path = $seoUrl->getPath();
+			// query
+			foreach ($params as $key => $value) {
+				$seoUrl->setQueryParameter($key, $value);
+			}
+
+			$query = $seoUrl->getQuery();
+			// fragment
+			$fragment = $seoUrl->getFragment();
+		} else {
+			// host
+			$host = $refUrl->getHost();
+			$queryPosition = strpos($seoUrl, '?');
+			$fragmentPosition = strrpos($seoUrl, '#');
+			// path
+			$path = $queryPosition ? substr($seoUrl, 0, $queryPosition) : $seoUrl;
+			// query
+			if ($queryPosition) {
+				$query = $fragmentPosition ?
+					substr($seoUrl, $queryPosition, $fragmentPosition - $queryPosition) :
+					substr($seoUrl, $queryPosition);
+				parse_str($query, $query);
+			} else {
+				$query = array(); // address does not have query
+			}
+			// TODO: merge query and parameters
+			$query = http_build_query($query + $params);
+
+
+			// fragment
+			$fragment = $fragmentPosition ? substr($seoUrl, $fragmentPosition) : NULL;
+		}
+
+		return ($this->options['secured'] ? 'https' : 'http') . '://' . // protocol
+		$host .
+		$refUrl->getBasePath() .
+		($path === '/' ? '' : $path) .
+		($query ? '?' . $query : '') .
+		($fragment ? '#' . $fragment : '');
 	}
 
 	public function loadOptions(array $new)
 	{
 		$result = $this->options;
-
-		if (array_key_exists(self::ACTION_IN_PRESENTER, $new)) {
-			$result[self::ACTION_IN_PRESENTER] = $new[self::ACTION_IN_PRESENTER];
-			unset($new[self::ACTION_IN_PRESENTER]);
-		}
 
 		if (array_key_exists(self::IGNORE_IN_QUERY, $new)) {
 			if (is_array($new[self::IGNORE_IN_QUERY])) {

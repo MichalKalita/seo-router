@@ -12,11 +12,11 @@ use Tester\Assert;
 
 class RouterSecured extends \Tester\TestCase
 {
-	function getSource($request, $return)
+	function getSource($return)
 	{
 		$mock = M::mock('Myiyk\SeoRouter\ISource');
 		$mock->shouldReceive('toUrl')
-			->with($request)->once()->andReturn($return);
+			->with(M::type('Myiyk\SeoRouter\Action'))->once()->andReturn($return);
 		return $mock;
 	}
 
@@ -28,7 +28,7 @@ class RouterSecured extends \Tester\TestCase
 				'id' => 123
 			));
 
-		$router = new Router($this->getSource($request, 'url'), array(), Router::SECURED);
+		$router = new Router($this->getSource('url'), array(), Router::SECURED);
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));
@@ -42,7 +42,7 @@ class RouterSecured extends \Tester\TestCase
 				'id' => 123
 			));
 
-		$router = new Router($this->getSource($request, 'url'), array('secured' => TRUE));
+		$router = new Router($this->getSource('url'), array('secured' => TRUE));
 
 		$httpUrl = new Nette\Http\Url("http://example.com");
 		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));

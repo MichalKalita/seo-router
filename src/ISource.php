@@ -2,19 +2,22 @@
 
 namespace Myiyk\SeoRouter;
 
+use Myiyk;
+use Nette;
+
 interface ISource
 {
 	/**
 	 * Translate url to application request
-	 * @param string $url
-	 * @return \Nette\Application\Request|null
+	 * @param Nette\Http\Url $url
+	 * @return Myiyk\SeoRouter\Action|null
 	 */
-	public function toAction($url);
+	public function toAction(Nette\Http\Url $url);
 
 	/**
-	 * Translate application request to url
-	 * @param \Nette\Application\Request $request
-	 * @return string|null
+	 * Translate action to url
+	 * @param Myiyk\SeoRouter\Action $action
+	 * @return Nette\Http\Url|string|null
 	 */
-	public function toUrl(\Nette\Application\Request $request);
+	public function toUrl(Myiyk\SeoRouter\Action $action);
 }

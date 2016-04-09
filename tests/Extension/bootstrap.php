@@ -16,12 +16,12 @@ function createFile($extension, $content)
 
 class EmptySource implements \Myiyk\SeoRouter\ISource
 {
-	public function toAction($url)
+	public function toAction(\Nette\Http\Url $url)
 	{
 		return NULL;
 	}
 
-	public function toUrl(\Nette\Application\Request $request)
+	public function toUrl(\Myiyk\SeoRouter\Action $action)
 	{
 		return NULL;
 	}
