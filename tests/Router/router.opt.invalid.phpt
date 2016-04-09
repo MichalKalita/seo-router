@@ -7,24 +7,12 @@
 include __DIR__ . '/../bootstrap.php';
 include __DIR__ . '/router.php';
 
-use Mockery as M;
-use Myiyk\SeoRouter\Router;
 
-class RouterOptionInvalid extends RouterBaseTest
-{
-	/**
-	 * @throws \Myiyk\SeoRouter\InvalidConfigurationException
-	 */
-	function testInvalidOptions()
-	{
-		$source = self::getSource('', array(''));
-		new Router($source, array('invalidOption'));
-	}
+/**
+ * Invalid options must throw exception
+ */
+\Tester\Assert::exception(function () {
 
-	function tearDown()
-	{
-		M::close();
-	}
-}
+	new \Myiyk\SeoRouter\Router(new Source(), array('invalidOption'));
 
-(new RouterOptionInvalid())->run();
+}, '\Myiyk\SeoRouter\InvalidConfigurationException');

@@ -5,53 +5,32 @@
  */
 
 include __DIR__ . '/../bootstrap.php';
+include __DIR__ . '/router.php';
 
-use Mockery as M;
-use Myiyk\SeoRouter\Router;
-use Tester\Assert;
 
-class RouterSecured extends \Tester\TestCase
-{
-	function getSource($return)
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toUrl')
-			->with(M::type('Myiyk\SeoRouter\Action'))->once()->andReturn($return);
-		return $mock;
-	}
+/**
+ * Secured as a flag
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show'),
+	'url'
+), array(), \Myiyk\SeoRouter\Router::SECURED);
 
-	function testConfiguredInFlags()
-	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show', 
+	'test' => 'testvalue'
+), 'https://example.com/url?test=testvalue');
 
-		$router = new Router($this->getSource('url'), array(), Router::SECURED);
 
-		$httpUrl = new Nette\Http\Url("http://example.com");
-		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));
-	}
+/**
+ * Secured as an option
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show'),
+	'url'
+), array('secured' => true));
 
-	function testConfiguredInOptions()
-	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
-
-		$router = new Router($this->getSource('url'), array('secured' => TRUE));
-
-		$httpUrl = new Nette\Http\Url("http://example.com");
-		Assert::same('https://example.com/url', $router->constructUrl($request, $httpUrl));
-	}
-
-	function tearDown()
-	{
-		M::close();
-	}
-}
-
-(new RouterSecured())->run();
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue'
+), 'https://example.com/url?test=testvalue');

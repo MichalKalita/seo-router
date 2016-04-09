@@ -1,88 +1,55 @@
 <?php
+
+/**
+ * Test: Myiyk\SeoRouter\Router match url
+ */
+
 include __DIR__ . '/../bootstrap.php';
+include __DIR__ . '/router.php';
 
 use Mockery as M;
-use Tester\Assert;
 
-class RouterMatch extends \Tester\TestCase
-{
-	function getSource()
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(false)->globally()->ordered();
-		return $mock;
-	}
+/**
+ * No result
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source());
 
-	function testOneSourceNoResult()
-	{
-		$router = new \Myiyk\SeoRouter\Router($this->getSource());
+routeIn($router, '/url', NULL);
 
-		$url = new Nette\Http\UrlScript("http://example.com/url");
 
-		$httpRequest = new Nette\Http\Request($url);
+/**
+ * One source
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Presenter:default', array('id' => 123)),
+	'url'
+));
 
-		Assert::null($router->match($httpRequest));
-	}
+routeIn($router, '/url', 'Presenter', array(
+	'action' => 'default',
+	'test' => 'testvalue',
+	'id' => 123,
+), 'http://example.com/url?test=testvalue');
 
-	function testOneSource()
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(
-			new \Myiyk\SeoRouter\Action('Presenter:default', array('id' => 123))
-		);
 
-		$router = new \Myiyk\SeoRouter\Router($mock);
+/**
+ * Multiple sources
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source());
+$router->addSource(new Source())->addSource(new Source());
 
-		$url = new Nette\Http\UrlScript("http://example.com/url");
+routeIn($router, '/url', NULL);
 
-		$httpRequest = new Nette\Http\Request($url);
 
-		$result = $router->match($httpRequest);
-		Assert::type('Nette\Application\Request', $result);
-		Assert::same('Presenter', $result->getPresenterName());
+/**
+ * Bad source
+ * @throws \Myiyk\SeoRouter\BadOutputException
+ */
+$mock = M::mock('Myiyk\SeoRouter\ISource');
+$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(array('justArray'));
 
-		// do NOT use getParameter(), it is NOT compatible to nette 2.2
-		$params = $result->getParameters();
-		Assert::same('default', $params['action']);
-		Assert::same(123, $params['id']);
-	}
+$router = new \Myiyk\SeoRouter\Router($mock);
 
-	/**
-	 * Testovani se tremi zdroji
-	 */
-	function testMultipleSources()
-	{
-		$router = new \Myiyk\SeoRouter\Router($this->getSource());
-		$router->addSource($this->getSource());
-		$router->addSource($this->getSource());
-
-		$url = new Nette\Http\UrlScript("http://example.com/url");
-
-		$httpRequest = new Nette\Http\Request($url);
-
-		Assert::null($router->match($httpRequest));
-	}
-
-	/**
-	 * @throws \Myiyk\SeoRouter\BadOutputException
-	 */
-	function testBadSource()
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(array('justArray'));
-
-		$router = new \Myiyk\SeoRouter\Router($mock);
-
-		$url = new Nette\Http\UrlScript("http://example.com/url");
-		$httpRequest = new Nette\Http\Request($url);
-
-		$router->match($httpRequest); // throws exception
-	}
-
-	function tearDown()
-	{
-		M::close();
-	}
-}
-
-(new RouterMatch())->run();
+\Tester\Assert::exception(function () use ($router) {
+	routeIn($router, '/url');
+}, '\Myiyk\SeoRouter\BadOutputException');

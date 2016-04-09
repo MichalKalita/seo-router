@@ -7,88 +7,62 @@
 include __DIR__ . '/../bootstrap.php';
 include __DIR__ . '/router.php';
 
-use Mockery as M;
-use Myiyk\SeoRouter\Router;
 
-class RouterOptionIgnoreInQuery extends RouterBaseTest
-{
-	function testDefault()
-	{
-		$source = self::getSource('url',
-			array(
-				'Front:Homepage',
-				array(
-					'action' => 'default',
-					'id' => 123,
-				)
-			));
-		$router = new Router($source);
+/**
+ * Option ignoreInQuery have default value
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+));
 
-		self::routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url?test=testvalue'
-		);
-	}
+routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url?test=testvalue');
 
-	function testEmpty()
-	{
-		$source = self::getSource('url',
-			array(
-				'Front:Homepage',
-				array(
-					'action' => 'default',
-					'id' => 123,
-				)
-			));
-		$router = new Router($source, array('ignoreInQuery' => array()));
 
-		self::routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url?action=default&test=testvalue&id=123'
-		);
+/**
+ * Option ignoreInQuery is empty array
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreInQuery' => array()));
 
-		$router = new Router($source, array('ignoreInQuery' => null));
+routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url?action=default&id=123&test=testvalue');
 
-		self::routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url?action=default&test=testvalue&id=123'
-		);
-	}
 
-	function testIgnoreAll()
-	{
-		$source = self::getSource('url',
-			array(
-				'Front:Homepage',
-				array(
-					'action' => 'default',
-					'id' => 123,
-				)
-			));
-		$router = new Router($source, array('ignoreInQuery' => array('action', 'presenter', 'test', 'id')));
+/**
+ * Option ignoreInQuery is NULL
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreInQuery' => NULL));
 
-		self::routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url'
-		);
-	}
+routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url?action=default&id=123&test=testvalue');
 
-	function tearDown()
-	{
-		M::close();
-	}
-}
 
-(new RouterOptionIgnoreInQuery())->run();
+/**
+ * Option ignoreInQuery ignore all parameters
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreInQuery' => array('action', 'presenter', 'test', 'id')));
+
+routeIn($router, '/url?action=queryaction&id=queryid', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url');

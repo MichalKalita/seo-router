@@ -4,8 +4,6 @@
  * Common code for Route test cases.
  */
 
-use Mockery as M;
-use Myiyk\SeoRouter\Action;
 use Tester\Assert;
 
 function routeIn(Nette\Application\IRouter $route, $url,
@@ -34,10 +32,7 @@ function routeIn(Nette\Application\IRouter $route, $url,
 		Assert::same($expectedPresenter, $request->getPresenterName());
 		Assert::same($expectedParams, $params);
 
-		unset($params['extra']);
-		$request->setParameters($params);
 		$result = $route->constructUrl($request, $url);
-		$result = strncmp($result, 'http://example.com', 18) ? $result : substr($result, 18);
 		Assert::same($expectedUrl, $result);
 
 	} else { // not matched
@@ -45,57 +40,33 @@ function routeIn(Nette\Application\IRouter $route, $url,
 	}
 }
 
-class RouterBaseTest extends \Tester\TestCase
+function routeOut(Nette\Application\IRouter $route, $presenter, $params = array())
 {
-	/**
-	 * @param string $url
-	 * @param null|array $request
-	 * @param null|int $toUrlCount
-	 * @param null|int $toActionCount
-	 * @return \Myiyk\SeoRouter\ISource
-	 */
-	static function getSource($url, $request = NULL, $toUrlCount = NULL, $toActionCount = NULL)
-	{
-		if ($request !== NULL && isset($request[1]) && isset($request[1]['action'])) {
-			$r = new Action(
-				$request[0] . ':' . $request[1]['action'], // presenter name
-				isset($request[1]) ? $request[1] : array() // parameters
-			);
-		} else {
-			$r = NULL;
-		}
+	$url = new Nette\Http\Url('http://example.com');
+	$request = new Nette\Application\Request($presenter, 'GET', $params);
+	return $route->constructUrl($request, $url);
+}
 
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toUrl')
-			// ->with($r) // cannot be used, because bug in mockery https://github.com/padraic/mockery/pull/527
-			->with(M::type('Myiyk\SeoRouter\Action'))->times($toUrlCount)->andReturn($url);
-		$mock->shouldReceive('toAction')
-			->with(M::type('Nette\Http\Url'))->times($toActionCount)->andReturn($r);
-		return $mock;
+class Source implements \Myiyk\SeoRouter\ISource
+{
+	/** @var \Myiyk\SeoRouter\Action|null */
+	private $action;
+	/** @var \Nette\Http\Url|string|null */
+	private $url;
+
+	function __construct(\Myiyk\SeoRouter\Action $action = NULL, $url = NULL)
+	{
+		$this->action = $action;
+		$this->url = $url;
 	}
 
-	static function getEmptyNeverCalledSource()
+	public function toAction(\Nette\Http\Url $url)
 	{
-		return self::getSource(NULL, NULL, 0, 0);
+		return $this->action;
 	}
 
-	static function routeIn(Nette\Application\IRouter $route, $url,
-	                        $expectedPresenter = NULL, $expectedParams = NULL, $expectedUrl = NULL,
-	                        $scriptPath = NULL)
+	public function toUrl(\Myiyk\SeoRouter\Action $request)
 	{
-		routeIn($route, $url, $expectedPresenter, $expectedParams, $expectedUrl, $scriptPath);
-	}
-
-
-	static function routeOut(Nette\Application\IRouter $route, $presenter, $params = [])
-	{
-		$url = new Nette\Http\Url('http://example.com');
-		$request = new Nette\Application\Request($presenter, 'GET', $params);
-		return $route->constructUrl($request, $url);
-	}
-
-	function tearDown()
-	{
-		M::close();
+		return $this->url;
 	}
 }

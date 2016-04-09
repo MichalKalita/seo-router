@@ -5,53 +5,32 @@
  */
 
 include __DIR__ . '/../bootstrap.php';
+include __DIR__ . '/router.php';
 
-use Mockery as M;
-use Myiyk\SeoRouter\Router;
-use Tester\Assert;
 
-class RouterOneWay extends \Tester\TestCase
-{
-	function getSource($request)
-	{
-		$mock = M::mock('Myiyk\SeoRouter\ISource');
-		$mock->shouldReceive('toUrl')
-			->with($request)->never();
-		return $mock;
-	}
+/**
+ * OneWay as a flag
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show'),
+	'url'
+), array(), \Myiyk\SeoRouter\Router::ONE_WAY);
 
-	function testConfiguredInFlags()
-	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue'
+), NULL);
 
-		$router = new Router($this->getSource($request), array(), Router::ONE_WAY);
 
-		$httpUrl = new Nette\Http\Url("http://example.com");
-		Assert::same(NULL, $router->constructUrl($request, $httpUrl));
-	}
+/**
+ * OneWay as an option
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show'),
+	'url'
+), array('oneWay' => true));
 
-	function testConfiguredInOptions()
-	{
-		$request = new \Nette\Application\Request('Front:Homepage', NULL,
-			array(
-				'action' => 'show',
-				'id' => 123
-			));
-
-		$router = new Router($this->getSource($request), array('oneWay' => TRUE));
-
-		$httpUrl = new Nette\Http\Url("http://example.com");
-		Assert::same(NULL, $router->constructUrl($request, $httpUrl));
-	}
-
-	function tearDown()
-	{
-		M::close();
-	}
-}
-
-(new RouterOneWay())->run();
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue'
+), NULL);

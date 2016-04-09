@@ -7,61 +7,43 @@
 include __DIR__ . '/../bootstrap.php';
 include __DIR__ . '/router.php';
 
-use Mockery as M;
-use Myiyk\SeoRouter\Router;
 
-class RouterOptionIgnoreUrl extends RouterBaseTest
-{
-	function testEmpty()
-	{
-		$source = self::getSource('url',
-			array(
-				'Front:Homepage',
-				array(
-					'action' => 'default',
-					'id' => 123,
-				)
-			));
-		$router = new Router($source, array('ignoreUrl' => array()));
+/**
+ * Option ignoreUrl is empty array
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreUrl' => array()));
 
-		self::routeIn($router, '/url', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url?test=testvalue'
-		);
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url?test=testvalue');
 
-		$router = new Router($source, array('ignoreUrl' => NULL));
 
-		self::routeIn($router, '/url', 'Front:Homepage',
-			array(
-				'action' => 'default',
-				'id' => 123,
-				'test' => 'testvalue',
-			), '/url?test=testvalue'
-		);
-	}
+/**
+ * Option ignoreUrl is NULL
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreUrl' => NULL));
 
-	function testIgnore()
-	{
-		$source = self::getSource('url',
-			array(
-				'Front:Homepage',
-				array(
-					'action' => 'default',
-					'id' => 123,
-				)
-			));
-		$router = new Router($source, array('ignoreUrl' => array('url')));
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'default',
+	'id' => 123,
+	'test' => 'testvalue',
+), 'http://example.com/url?test=testvalue');
 
-		self::routeIn($router, '/url', null);
-	}
 
-	function tearDown()
-	{
-		M::close();
-	}
-}
+/**
+ * Option ignoreUrl in work
+ */
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:default', array('id' => 123)),
+	'url'
+), array('ignoreUrl' => array('url')));
 
-(new RouterOptionIgnoreUrl())->run();
+routeIn($router, '/url', NULL);

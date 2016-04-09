@@ -12,8 +12,7 @@ class Router extends Object implements Nette\Application\IRouter
 {
 	/** options */
 	const IGNORE_IN_QUERY = 'ignoreInQuery',
-		IGNORE_URL = 'ignoreUrl',
-		PRESENTER = 'presenter';
+		IGNORE_URL = 'ignoreUrl';
 
 	/** @internal url type */
 	const HOST = 1,
@@ -26,7 +25,6 @@ class Router extends Object implements Nette\Application\IRouter
 	protected $options = array(
 		self::IGNORE_IN_QUERY => array('presenter', 'action', 'id'), // parameters ignored from query
 		self::IGNORE_URL => array(), // array of ignored url
-		self::PRESENTER => NULL, // default presenter
 		'secured' => FALSE,
 		'oneWay' => FALSE,
 	);
@@ -126,15 +124,13 @@ class Router extends Object implements Nette\Application\IRouter
 
 			// presenter not set from ISource, load from parameters or default presenter
 			if (!mb_strlen($presenter)) {
-				if (isset($params[self::PRESENTER]) && $params[self::PRESENTER]) {
-					$presenter = $params[self::PRESENTER];
-				} elseif ($this->options[self::PRESENTER]) {
-					$presenter = $this->options[self::PRESENTER];
+				if (isset($params['presenter']) && $params['presenter']) {
+					$presenter = $params['presenter'];
 				} else {
 					return NULL;
 				}
 			}
-			unset($params[self::PRESENTER]);
+			unset($params['presenter']);
 
 			return new Request($presenter,
 				$httpRequest->getMethod(), $params,
@@ -194,9 +190,10 @@ class Router extends Object implements Nette\Application\IRouter
 			} else {
 				$query = array(); // address does not have query
 			}
-			// TODO: merge query and parameters
-			$query = http_build_query($query + $params);
 
+			$query = $query + $params;
+			ksort($query);
+			$query = http_build_query($query);
 
 			// fragment
 			$fragment = $fragmentPosition ? substr($seoUrl, $fragmentPosition) : NULL;
@@ -230,11 +227,6 @@ class Router extends Object implements Nette\Application\IRouter
 				$result[self::IGNORE_URL] = array();
 			}
 			unset($new[self::IGNORE_URL]);
-		}
-
-		if (array_key_exists(self::PRESENTER, $new)) {
-			$result[self::PRESENTER] = $new[self::PRESENTER];
-			unset($new[self::PRESENTER]);
 		}
 
 		if (array_key_exists('secured', $new)) {
