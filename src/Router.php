@@ -17,13 +17,8 @@ class Router extends Object implements Nette\Application\IRouter
 	const IGNORE_IN_QUERY = 'ignoreInQuery',
 		IGNORE_URL = 'ignoreUrl';
 
-	/** @internal url type */
-	const HOST = 1,
-		PATH = 2,
-		RELATIVE = 3;
-
-	/** @var ISource[] */
-	protected $sources = array();
+	/** @var ISource */
+	protected $source;
 
 	protected $options = array(
 		self::IGNORE_IN_QUERY => array('presenter', 'action', 'id'), // parameters ignored from query
@@ -34,7 +29,11 @@ class Router extends Object implements Nette\Application\IRouter
 
 	function __construct(ISource $source, array $options = array(), $flags = 0)
 	{
-		$this->addSource($source);
+		if ($source instanceof SourceList) {
+			$this->source = $source;
+		} else {
+			$this->source = new SourceList($source);
+		}
 
 		if ($flags & self::SECURED) {
 			$options['secured'] = TRUE;
@@ -46,58 +45,35 @@ class Router extends Object implements Nette\Application\IRouter
 		$this->loadOptions($options);
 	}
 
+	/**
+	 * Add source
+	 * @param ISource $source
+	 * @return $this
+	 */
 	public function addSource(ISource $source)
 	{
-		$this->sources[] = $source;
+		$this->source->addSource($source);
+
 		return $this;
 	}
 
 	/**
-	 * @param Url $url
-	 * @return Action|null
-	 * @throws BadOutputException
+	 * Prepend source
+	 * @param ISource $source
+	 * @return $this
 	 */
-	protected function toAction($url)
+	public function prependSource(ISource $source)
 	{
-		$result = NULL;
+		$this->source->prependSource($source);
 
-		foreach ($this->sources as $source) {
-			if ($result = $source->toAction($url)) {
-				if (!$result instanceof Action) {
-					throw new BadOutputException(
-						get_class($source) . '::toAction() must return Myiyk\SeoRouter\Action, not '
-						. (is_object($result) ? get_class($result) : gettype($result))
-					);
-				}
-				break;
-			}
-		}
-
-		return $result;
+		return $this;
 	}
 
 	/**
-	 * @param Action $action
-	 * @return null|string|Url
-	 * @throws BadOutputException
+	 * @param array $params
+	 * @return array
 	 */
-	protected function toUrl(Action $action)
-	{
-		foreach ($this->sources as $source) {
-			if ($result = $source->toUrl($action)) {
-				if (!$result instanceof Url && !is_string($result)) {
-					throw new BadOutputException(
-						get_class($source) . '::toUrl() must return Nette\Http\Url or string, not '
-						. (is_object($result) ? get_class($result) : gettype($result))
-					);
-				}
-				return $result;
-			}
-		}
-		return NULL;
-	}
-
-	protected function clearParameters($params)
+	protected function clearParameters(array $params)
 	{
 		foreach ($params as $p => $_value) {
 			if (in_array($p, $this->options[self::IGNORE_IN_QUERY])) {
@@ -120,7 +96,7 @@ class Router extends Object implements Nette\Application\IRouter
 			return NULL;
 		}
 
-		if ($action = $this->toAction($url)) {
+		if ($action = $this->source->toAction($url)) {
 			$params = array_merge($httpRequest->getQuery(), $action->getParameters());
 			$presenter = $action->getPresenter();
 			$params['action'] = $action->getAction();
@@ -160,7 +136,7 @@ class Router extends Object implements Nette\Application\IRouter
 		$action = new Action($appRequest->getPresenterName() . ':' . $appRequest->getParameter('action'), $params);
 
 		// ISource return NULL, not found url to generate
-		if (($seoUrl = $this->toUrl($action)) === NULL) {
+		if (($seoUrl = $this->source->toUrl($action)) === NULL) {
 			return NULL;
 		}
 
@@ -203,6 +179,10 @@ class Router extends Object implements Nette\Application\IRouter
 		($fragment ? '#' . $fragment : '');
 	}
 
+	/**
+	 * @param array $new
+	 * @throws InvalidConfigurationException
+	 */
 	public function loadOptions(array $new)
 	{
 		$result = $this->options;
@@ -237,7 +217,7 @@ class Router extends Object implements Nette\Application\IRouter
 
 		if (count($new)) {
 			throw new InvalidConfigurationException(
-				'Options not recognized. ' . print_r($new, true),
+				'Options are not recognized. ' . print_r($new, true),
 				InvalidConfigurationException::NOT_RECOGNIZED
 			);
 		}

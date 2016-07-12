@@ -7,7 +7,6 @@
 include __DIR__ . '/../bootstrap.php';
 include __DIR__ . '/router.php';
 
-use Mockery as M;
 
 /**
  * No result
@@ -44,10 +43,7 @@ routeIn($router, '/url', NULL);
 /**
  * Bad source
  */
-$mock = M::mock('Myiyk\SeoRouter\ISource');
-$mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(array('justArray'));
-
-$router = new \Myiyk\SeoRouter\Router($mock);
+$router = new \Myiyk\SeoRouter\Router(new Source(array('justArray')));
 
 \Tester\Assert::exception(function () use ($router) {
 	routeIn($router, '/url');

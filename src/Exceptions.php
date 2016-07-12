@@ -15,3 +15,7 @@ class BadOutputException extends \Exception
 class InvalidParameterException extends \Exception
 {
 }
+
+class InfiniteLoopException extends \Exception
+{
+}

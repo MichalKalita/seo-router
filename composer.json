@@ -16,8 +16,7 @@
     "require-dev": {
         "nette/bootstrap": "~2.2",
         "nette/utils": "~2.2",
-        "nette/tester": "~1.0",
-        "mockery/mockery": "~0.9.4"
+        "nette/tester": "~1.0"
     },
     "autoload": {
         "classmap": ["src/"]
