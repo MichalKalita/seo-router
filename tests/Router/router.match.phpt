@@ -43,7 +43,6 @@ routeIn($router, '/url', NULL);
 
 /**
  * Bad source
- * @throws \Myiyk\SeoRouter\BadOutputException
  */
 $mock = M::mock('Myiyk\SeoRouter\ISource');
 $mock->shouldReceive('toAction')->with(M::type('Nette\Http\Url'))->once()->andReturn(array('justArray'));

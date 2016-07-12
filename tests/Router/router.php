@@ -49,12 +49,17 @@ function routeOut(Nette\Application\IRouter $route, $presenter, $params = array(
 
 class Source implements \Myiyk\SeoRouter\ISource
 {
-	/** @var \Myiyk\SeoRouter\Action|null */
+	/** @var array|\Myiyk\SeoRouter\Action|null  */
 	private $action;
-	/** @var \Nette\Http\Url|string|null */
+	/** @var \Nette\Http\Url|null|string  */
 	private $url;
 
-	function __construct(\Myiyk\SeoRouter\Action $action = NULL, $url = NULL)
+	/**
+	 * Source constructor.
+	 * @param \Myiyk\SeoRouter\Action|array|NULL $action
+	 * @param \Nette\Http\Url|string|NULL $url
+	 */
+	function __construct($action = NULL, $url = NULL)
 	{
 		$this->action = $action;
 		$this->url = $url;

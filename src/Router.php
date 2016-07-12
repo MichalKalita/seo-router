@@ -7,7 +7,10 @@ use Nette\Application\Request;
 use Nette\Http\Url;
 use Nette\Object;
 
-// TODO: promenne v URL, napr. 'domain', aby slo adresovat subdomeny
+/**
+ * Class Router
+ * @package Myiyk\SeoRouter
+ */
 class Router extends Object implements Nette\Application\IRouter
 {
 	/** options */
@@ -161,43 +164,36 @@ class Router extends Object implements Nette\Application\IRouter
 			return NULL;
 		}
 
-		if ($seoUrl instanceof Url) {
-			// host
-			$host = $seoUrl->getHost() ? $seoUrl->getHost() : $refUrl->getHost();
-			// path
-			$path = $seoUrl->getPath();
-			// query
-			foreach ($params as $key => $value) {
-				$seoUrl->setQueryParameter($key, $value);
-			}
-
-			$query = $seoUrl->getQuery();
-			// fragment
-			$fragment = $seoUrl->getFragment();
-		} else {
-			// host
-			$host = $refUrl->getHost();
-			$queryPosition = strpos($seoUrl, '?');
-			$fragmentPosition = strrpos($seoUrl, '#');
-			// path
-			$path = $queryPosition ? substr($seoUrl, 0, $queryPosition) : $seoUrl;
-			// query
-			if ($queryPosition) {
-				$query = $fragmentPosition ?
-					substr($seoUrl, $queryPosition, $fragmentPosition - $queryPosition) :
-					substr($seoUrl, $queryPosition);
-				parse_str($query, $query);
-			} else {
-				$query = array(); // address does not have query
-			}
-
-			$query = $query + $params;
-			ksort($query);
-			$query = http_build_query($query);
-
-			// fragment
-			$fragment = $fragmentPosition ? substr($seoUrl, $fragmentPosition) : NULL;
+		if (!$seoUrl instanceof Url) {
+			$seoUrl = new Url($seoUrl);
 		}
+
+		// host
+		if ($seoUrl->getHost()) {
+			$host = $refUrl->getHost();
+			$parts = ip2long($host) ? [$host] : array_reverse(explode('.', $host));
+			$host = strtr($seoUrl->getHost(), [
+				// '/%basePath%/' => $refUrl->getBasePath(), // TODO: add support
+				'%tld%' => $parts[0],
+				'%domain%' => isset($parts[1]) ? "$parts[1].$parts[0]" : $parts[0],
+				'%sld%' => isset($parts[1]) ? $parts[1] : '',
+				'%host%' => $refUrl->getHost(),
+			]);
+		} else {
+			$host = $refUrl->getHost();
+		}
+
+		// path
+		$path = $seoUrl->getPath();
+
+		// query
+		$query = $seoUrl->getQueryParameters() + $params;
+		ksort($query);
+		$seoUrl->setQuery($query);
+		$query = $seoUrl->getQuery();
+
+		// fragment
+		$fragment = $seoUrl->getFragment();
 
 		return ($this->options['secured'] ? 'https' : 'http') . '://' . // protocol
 		$host .

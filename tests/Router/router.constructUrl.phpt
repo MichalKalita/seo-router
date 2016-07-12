@@ -37,6 +37,17 @@ routeIn($router, '/url', 'Front:Homepage', array(
 	'id' => 123,
 ), 'http://example.com/url?test=testvalue');
 
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show', array('id' => 123)),
+	new \Nette\Http\Url('url')
+));
+
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue',
+	'id' => 123,
+), 'http://example.com/url?test=testvalue');
+
 
 /**
  * Multiple sources
@@ -59,6 +70,24 @@ routeIn($router, '/url', 'Front:Homepage', array(
 	'id' => 123,
 ), 'http://example.com/url?test=testvalue');
 
+// first source is empty
+$router = new \Myiyk\SeoRouter\Router(new Source(NULL, new \Nette\Http\Url('url')));
+
+// second source have url
+$router->addSource(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show', array('id' => 123)),
+	new \Nette\Http\Url('url')
+));
+
+// third source will never used
+$router->addSource(new Source());
+
+routeIn($router, '/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue',
+	'id' => 123,
+), 'http://example.com/url?test=testvalue');
+
 
 /**
  * Url with base path
@@ -66,6 +95,17 @@ routeIn($router, '/url', 'Front:Homepage', array(
 $router = new \Myiyk\SeoRouter\Router(new Source(
 	new \Myiyk\SeoRouter\Action('Front:Homepage:show', array('id' => 123)),
 	'url'
+));
+
+routeIn($router, '/~user/web-root/url', 'Front:Homepage', array(
+	'action' => 'show',
+	'test' => 'testvalue',
+	'id' => 123,
+), 'http://example.com/~user/web-root/url?test=testvalue', '/~user/web-root/index.php');
+
+$router = new \Myiyk\SeoRouter\Router(new Source(
+	new \Myiyk\SeoRouter\Action('Front:Homepage:show', array('id' => 123)),
+	new \Nette\Http\Url('url')
 ));
 
 routeIn($router, '/~user/web-root/url', 'Front:Homepage', array(
