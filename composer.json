@@ -16,7 +16,8 @@
     "require-dev": {
         "nette/bootstrap": "~2.2",
         "nette/utils": "~2.2",
-        "nette/tester": "~1.0"
+        "nette/tester": "~1.0",
+        "apigen/apigen": "^4.1.2"
     },
     "autoload": {
         "classmap": ["src/"]
