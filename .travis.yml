@@ -1,19 +1,46 @@
 language: php
+
 php:
-  - 7.0
-  - 5.6
-  - 5.5
   - 5.4
+  - 5.5
+  - 5.6
+  - 7
+  - 7.1
   - hhvm
 
+env:
+  - TESTER_PHP_BIN="php-cgi"
+  - TESTER_PHP_BIN="hhvm"
+
 matrix:
-    allow_failures:
-        - php: hhvm
+  allow_failures:
+    - php: hhvm
 
-    exclude:
-        - php: hhvm
-          env: PHP_BIN=php-cgi
+  exclude:
+    - php: 5.3.3
+      env: TESTER_PHP_BIN="hhvm"
 
-install: make install
+    - php: 5.4
+      env: TESTER_PHP_BIN="hhvm"
 
-script: make tests
+    - php: 5.5
+      env: TESTER_PHP_BIN="hhvm"
+
+    - php: 5.6
+      env: TESTER_PHP_BIN="hhvm"
+
+    - php: hhvm
+      env: TESTER_PHP_BIN="php-cgi"
+
+before_install:
+  - composer self-update
+
+install:
+  - composer install --no-interaction --prefer-source
+
+script:
+  - ./vendor/bin/tester -p $TESTER_PHP_BIN -s ./tests/
+
+after_failure:
+  # Prints *.actual files content
+  - for i in $(find ./tests -name \*.actual); do echo "--- $i"; cat $i; echo; echo; done
