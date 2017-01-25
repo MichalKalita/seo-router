@@ -34,34 +34,37 @@ Router need source with interface Myiyk/SeoRouter/ISource
 
 namespace App\Model;
 
+use Myiyk\SeoRouter\Action;
+use Myiyk\SeoRouter\ISource;
 use Nette;
 
-class SeoRouterSource extends Nette\Object implements \Myiyk\SeoRouter\ISource
+class SeoRouterSource extends Nette\Object implements ISource
 {
 
-	// for address example.com/home slug will be "home"
-	public function toAction($slug)
+	public function toAction(Nette\Http\Url $url)
 	{
-		if ($slug == '' || $slug == 'home') {
-			$presenter = "Homepage";  // example presenter
+		$relativeUrl = $url->getRelativeUrl();
+
+		if ($relativeUrl == '' || $relativeUrl == 'home') {
+			$presenter = "Homepage:default";  // example presenter
 			$params = array(
-				'action' => 'default', // action
-				'id' => 123,           // other parameters
+				'id' => 123, // other parameters
 			);
-			return new \Nette\Application\Request($presenter, NULL, $params);
+			return new Action($presenter, $params);
 		} else { // or return NULL if result not found
 			return NULL;
 		}
 	}
 
-	public function toUrl(\Nette\Application\Request $request)
+	public function toUrl(Action $request)
 	{
-		$presenter = $request->getPresenterName();
-		$params = $request->getParameters();
+		$presenter = $request->getPresenter();
+		$action = $request->getAction();
 		// complete documentation of Nette\Application\Request on
 		// https://api.nette.org/2.3.8/Nette.Application.Request.html
 
-		if ($presenter == 'Homepage' && $params['action'] == 'default') {
+		if ($presenter == 'Homepage' && $action == 'default') {
+			// or $request->getPresenterAndAction() == 'Homepage:default'
 			return "home"; // means example.com/home
 		} else { // or return NULL if result not found
 			return NULL;
