@@ -3,6 +3,8 @@
 namespace Myiyk\SeoRouter;
 
 use Myiyk;
+use Myiyk\SeoRouter\Exceptions\BadOutputException;
+use Myiyk\SeoRouter\Exceptions\InfiniteLoopException;
 use Nette;
 use Nette\Http\Url;
 use Nette\Object;
@@ -24,7 +26,7 @@ class SourceList extends Object implements ISource
 	 * SourceList constructor.
 	 * @params ISource
 	 */
-	function __construct(/* sources */)
+	public function __construct(/* sources */)
 	{
 		foreach (func_get_args() as $source) {
 			$this->addSource($source);

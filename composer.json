@@ -1,6 +1,7 @@
 {
     "name": "myiyk/seo-router",
     "type": "library",
+    "description": "Seo router extension for Nette framework",
     "license": "MIT",
     "authors": [
         {
@@ -11,15 +12,16 @@
     "require": {
         "nette/application": "~2.2",
         "nette/http": "~2.2",
-        "nette/di": "~2.2"
+        "nette/di": "~2.2",
+        "php": ">=5.4"
     },
     "require-dev": {
-        "nette/bootstrap": "~2.2",
-        "nette/utils": "~2.2",
+        "nette/bootstrap": ">=2.2",
+        "nette/utils": ">=2.2",
         "nette/tester": "~1.0",
         "apigen/apigen": "^4.1.2"
     },
     "autoload": {
-        "classmap": ["src/"]
+        "psr-4": {"Myiyk\\SeoRouter\\": "src/"}
     }
 }

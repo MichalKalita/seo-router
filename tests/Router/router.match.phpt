@@ -47,4 +47,4 @@ $router = new \Myiyk\SeoRouter\Router(new Source(array('justArray')));
 
 \Tester\Assert::exception(function () use ($router) {
 	routeIn($router, '/url');
-}, '\Myiyk\SeoRouter\BadOutputException');
+}, '\Myiyk\SeoRouter\Exceptions\BadOutputException');

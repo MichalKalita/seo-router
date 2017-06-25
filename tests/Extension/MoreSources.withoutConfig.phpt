@@ -32,6 +32,6 @@ NEON
 
 $e = Assert::exception(function () use ($configurator) {
 	$configurator->createContainer();
-}, 'Myiyk\SeoRouter\InvalidConfigurationException');
+}, 'Myiyk\SeoRouter\Exceptions\InvalidConfigurationException');
 
-Assert::same(\Myiyk\SeoRouter\InvalidConfigurationException::MISSING_SOURCES, $e->getCode());
+Assert::same(\Myiyk\SeoRouter\Exceptions\InvalidConfigurationException::MISSING_SOURCES, $e->getCode());

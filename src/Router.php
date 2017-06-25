@@ -2,6 +2,7 @@
 
 namespace Myiyk\SeoRouter;
 
+use Myiyk\SeoRouter\Exceptions\InvalidConfigurationException;
 use Nette;
 use Nette\Application\Request;
 use Nette\Http\Url;
@@ -27,7 +28,7 @@ class Router extends Object implements Nette\Application\IRouter
 		'oneWay' => FALSE,
 	);
 
-	function __construct(ISource $source, array $options = array(), $flags = 0)
+	public function __construct(ISource $source, array $options = array(), $flags = 0)
 	{
 		if ($source instanceof SourceList) {
 			$this->source = $source;

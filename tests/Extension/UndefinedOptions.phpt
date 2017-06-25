@@ -31,6 +31,6 @@ $container = $configurator->createContainer();
 
 $e = Assert::exception(function () use ($container) {
 	$container->getService('seoRouter.router');
-}, 'Myiyk\SeoRouter\InvalidConfigurationException');
+}, 'Myiyk\SeoRouter\Exceptions\InvalidConfigurationException');
 
-Assert::same(\Myiyk\SeoRouter\InvalidConfigurationException::NOT_RECOGNIZED, $e->getCode());
+Assert::same(\Myiyk\SeoRouter\Exceptions\InvalidConfigurationException::NOT_RECOGNIZED, $e->getCode());

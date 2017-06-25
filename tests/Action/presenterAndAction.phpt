@@ -32,4 +32,4 @@ Assert::same('edit', $action->getAction());
 
 Assert::exception(function () use ($action) {
 	$action->setPresenterAndAction('PresenterWithoutAction');
-}, 'Myiyk\SeoRouter\InvalidParameterException');
+}, 'Myiyk\SeoRouter\Exceptions\InvalidParameterException');

@@ -2,7 +2,7 @@
 
 namespace Myiyk\SeoRouter;
 
-use Nette;
+use Myiyk\SeoRouter\Exceptions\InvalidParameterException;
 use Nette\Object;
 
 class Action extends Object
@@ -14,7 +14,7 @@ class Action extends Object
 	/** @var array */
 	protected $parameters;
 
-	function __construct($presenterAndAction, $parameters = array())
+	public function __construct($presenterAndAction, $parameters = array())
 	{
 		$this->setPresenterAndAction($presenterAndAction);
 		$this->parameters = $parameters;

@@ -2,6 +2,7 @@
 
 namespace Myiyk\SeoRouter;
 
+use Myiyk\SeoRouter\Exceptions\InvalidConfigurationException;
 use Nette;
 
 /**

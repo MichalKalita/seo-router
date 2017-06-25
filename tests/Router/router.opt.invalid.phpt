@@ -15,4 +15,4 @@ include __DIR__ . '/router.php';
 
 	new \Myiyk\SeoRouter\Router(new Source(), array('invalidOption'));
 
-}, '\Myiyk\SeoRouter\InvalidConfigurationException');
+}, '\Myiyk\SeoRouter\Exceptions\InvalidConfigurationException');

@@ -44,8 +44,8 @@ $sourceList->addSource($sourceList2);
 
 \Tester\Assert::exception(function () use ($sourceList) {
 	$sourceList->toAction(new \Nette\Http\Url());
-}, 'Myiyk\SeoRouter\InfiniteLoopException');
+}, 'Myiyk\SeoRouter\Exceptions\InfiniteLoopException');
 
 \Tester\Assert::exception(function () use ($sourceList) {
 	$sourceList->toUrl(new \Myiyk\SeoRouter\Action('Not:depend'));
-}, 'Myiyk\SeoRouter\InfiniteLoopException');
+}, 'Myiyk\SeoRouter\Exceptions\InfiniteLoopException');
